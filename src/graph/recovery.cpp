@@ -156,8 +156,7 @@ std::vector<DependencyNodeId> Graph::prerequisites(DependencyNodeId id, bool tra
   return ancestors_locked(id, transitive, true);
 }
 
-AffectedClosure Graph::affected_closure(DependencyNodeId seed, std::uint32_t max_depth) const {
-  std::shared_lock lock(mutex_);
+AffectedClosure Graph::affected_closure_locked(DependencyNodeId seed, std::uint32_t max_depth) const {
   AffectedClosure closure;
   if (!find_locked(seed)) return closure;
   const std::uint32_t cap = max_depth != 0 ? max_depth : kDefaultMaxTraversalDepth;
@@ -178,7 +177,6 @@ AffectedClosure Graph::affected_closure(DependencyNodeId seed, std::uint32_t max
       if (eit == edges_.end() || !eit->second.active) continue;
       auto nxt = eit->second.consumer_id;
       if (visited_edges.insert(eid.value()).second) {
-        // Include the edge only if its target is reachable.
         closure.edges.push_back(eid);
       }
       if (visited.insert(nxt.value()).second) {
@@ -187,7 +185,6 @@ AffectedClosure Graph::affected_closure(DependencyNodeId seed, std::uint32_t max
       }
     }
   }
-  // Frontier: affected nodes with no affected descendant (leaves of the closure).
   std::unordered_set<std::uint64_t> node_set;
   for (auto n : closure.nodes) node_set.insert(n.value());
   for (auto n : closure.nodes) {
@@ -203,6 +200,11 @@ AffectedClosure Graph::affected_closure(DependencyNodeId seed, std::uint32_t max
     if (!has_child) closure.frontier.push_back(n);
   }
   return closure;
+}
+
+AffectedClosure Graph::affected_closure(DependencyNodeId seed, std::uint32_t max_depth) const {
+  std::shared_lock lock(mutex_);
+  return affected_closure_locked(seed, max_depth);
 }
 
 std::vector<DependencyNodeId> Graph::topology_order_locked(
@@ -229,8 +231,8 @@ std::vector<DependencyNodeId> Graph::topology_order_locked(
 std::vector<DependencyNodeId> Graph::recovery_set(DependencyNodeId seed) const {
   std::shared_lock lock(mutex_);
   // Affected closure nodes that need recovery, ordered upstream-first.
-  AffectedClosure c = affected_closure(seed, 0);
-  // affected_closure already locked shared; re-derive order via topology.
+  AffectedClosure c = affected_closure_locked(seed, 0);
+  // affected_closure_locked assumes the shared lock we hold; re-derive order via topology.
   std::vector<DependencyNodeId> order = topology_order_locked(c.nodes);
   std::vector<DependencyNodeId> result;
   std::unordered_set<std::uint64_t> seen;
@@ -245,7 +247,7 @@ std::vector<DependencyNodeId> Graph::recovery_set(DependencyNodeId seed) const {
 
 std::vector<DependencyNodeId> Graph::recompute_frontier(DependencyNodeId seed) const {
   std::shared_lock lock(mutex_);
-  AffectedClosure c = affected_closure(seed, 0);
+  AffectedClosure c = affected_closure_locked(seed, 0);
   std::vector<DependencyNodeId> result;
   std::unordered_set<std::uint64_t> node_set;
   for (auto n : c.nodes) node_set.insert(n.value());

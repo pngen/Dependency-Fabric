@@ -53,6 +53,23 @@ endif()
 set(DF_INSTALL_TARGETS "")
 
 # ---------------------------------------------------------------------------
+# Sanitizers (applied to every C++ translation unit, so a static library and its
+# consumers stay ABI-consistent). MSVC supports /fsanitize=address; the ASan
+# runtime is auto-linked by the compiler. Scoped to CXX so CUDA is unaffected.
+# ---------------------------------------------------------------------------
+if(DF_ENABLE_SANITIZERS)
+  if(MSVC)
+    add_compile_options("$<$<COMPILE_LANGUAGE:CXX>:/fsanitize=address>")
+  else()
+    add_compile_options("$<$<COMPILE_LANGUAGE:CXX>:-fsanitize=address>")
+    add_compile_options("$<$<COMPILE_LANGUAGE:CXX>:-fsanitize=undefined>")
+    add_compile_options("$<$<COMPILE_LANGUAGE:CXX>:-fno-omit-frame-pointer>")
+    add_link_options("-fsanitize=address")
+    add_link_options("-fsanitize=undefined")
+  endif()
+endif()
+
+# ---------------------------------------------------------------------------
 # The library
 # ---------------------------------------------------------------------------
 add_library(dependency_fabric ${DF_CORE_SOURCES})
@@ -81,11 +98,6 @@ else()
   target_compile_options(dependency_fabric PRIVATE
       -Wall -Wextra -Wpedantic -Werror
       -Wshadow -Wconversion -Wsign-conversion -Wold-style-cast -Wdouble-promotion)
-endif()
-
-if(DF_ENABLE_SANITIZERS AND NOT MSVC)
-  target_compile_options(dependency_fabric PRIVATE -fsanitize=address,undefined -fno-omit-frame-pointer)
-  target_link_options(dependency_fabric PRIVATE -fsanitize=address,undefined)
 endif()
 
 # Strict warnings for ALL C++ targets (library, tests, tools, examples, benchmarks).

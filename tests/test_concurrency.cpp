@@ -61,6 +61,9 @@ int main() {
         (void)f.g.dependents(DependencyNodeId(id), true);
         auto ac = f.g.affected_closure(DependencyNodeId(id), 0);
         (void)ac;
+        (void)f.g.recovery_set(DependencyNodeId(id));
+        (void)f.g.recompute_frontier(DependencyNodeId(id));
+        (void)f.g.recovery_plan(DependencyNodeId(id));
       }
     });
   }

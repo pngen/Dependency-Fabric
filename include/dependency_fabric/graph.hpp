@@ -185,7 +185,8 @@ class Graph {
                                                  const DependencyPredicate& pred,
                                                  DependencyNodeGeneration& required,
                                                  GenerationPredicateKind& kind) const;
-  [[nodiscard]] std::vector<DependencyNodeId> topology_order_locked(
+  AffectedClosure affected_closure_locked(DependencyNodeId seed, std::uint32_t max_depth) const;
+    [[nodiscard]] std::vector<DependencyNodeId> topology_order_locked(
       const std::vector<DependencyNodeId>& start) const;
 
   mutable std::shared_mutex mutex_;
