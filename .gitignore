@@ -1,0 +1,35 @@
+# Build directories
+/build*/
+/out/
+/build_*/
+
+# IDE / editor
+.vscode/
+.idea/
+*.user
+*.suo
+
+# CMake artifacts
+CMakeCache.txt
+CMakeFiles/
+cmake_install.cmake
+install_manifest.txt
+CTestTestfile.cmake
+_cmake_export_*.cmake
+Testing/
+
+# Binaries / objects
+*.o
+*.obj
+*.exe
+*.lib
+*.dll
+*.a
+*.so
+
+# Test data
+test_data/
+
+# CUDA
+*.cu.o
+*.ptx

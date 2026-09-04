@@ -1,0 +1,7 @@
+cmake_minimum_required(VERSION 3.22)
+project(df_consumer LANGUAGES CXX)
+set(CMAKE_CXX_STANDARD 20)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+find_package(DependencyFabric CONFIG REQUIRED)
+add_executable(df_consumer main.cpp)
+target_link_libraries(df_consumer PRIVATE DependencyFabric::DependencyFabric)

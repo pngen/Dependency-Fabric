@@ -1,0 +1,2 @@
+add_executable(df_benchmark benchmark_main.cpp)
+target_link_libraries(df_benchmark PRIVATE dependency_fabric)

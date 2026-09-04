@@ -1,0 +1,15 @@
+# tests
+function(df_add_test name)
+  add_executable(${name} ${ARGN})
+  target_link_libraries(${name} PRIVATE dependency_fabric)
+  add_test(NAME ${name} COMMAND ${name})
+endfunction()
+
+df_add_test(df_smoke        smoke_main.cpp)
+df_add_test(df_cycle        test_cycle.cpp)
+df_add_test(df_invalidation test_invalidation.cpp)
+df_add_test(df_recovery     test_recovery.cpp)
+df_add_test(df_persistence  test_persistence.cpp)
+df_add_test(df_property     test_property.cpp)
+df_add_test(df_concurrency  test_concurrency.cpp)
+df_add_test(df_adversarial  test_adversarial.cpp)
