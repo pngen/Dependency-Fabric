@@ -275,6 +275,7 @@ Outcome Graph::eval_set_locked(const DependencySet& set, std::vector<BlockingDep
   std::uint32_t ok_count = 0;
   const std::size_t start = blockers.size();
   bool any_optional_fail = false;
+  bool any_failed = false;
 
   for (auto eid : set.members) {
     const Edge* e = find_edge_locked(eid);
@@ -286,7 +287,7 @@ Outcome Graph::eval_set_locked(const DependencySet& set, std::vector<BlockingDep
     for (auto& b : local) b.is_set_member = true;
     blockers.insert(blockers.end(), local.begin(), local.end());
     if (edge_blocked) {
-      // saturate, member not satisfied
+      any_failed = true;
     } else if (edge_degraded && e->required()) {
       // a required edge that is only degraded (stale) still counts as satisfied
       // only for the purpose of count; staleness is tracked separately.
@@ -328,11 +329,12 @@ Outcome Graph::eval_set_locked(const DependencySet& set, std::vector<BlockingDep
   satisfied = ok_count;
 
   // If the set is satisfied, drop the per-member blockers we appended (they are
-  // informational only and do not block the group). If stale was detected we
-  // keep the stale markers but not as blockers.
+  // informational only and do not block the group). A satisfied OPTIONAL_GROUP
+  // with failed members degrades the consumer instead of blocking it.
   if (satisfied_set) {
     blockers.resize(start);
     if (any_optional_fail || stale) degraded = true;
+    if (set.op == SetOperator::OPTIONAL_GROUP && any_failed) degraded = true;
     return Outcome::READY;
   }
 
